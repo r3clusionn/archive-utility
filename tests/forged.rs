@@ -193,6 +193,9 @@ fn extraction_refuses_unsafe_paths_and_still_extracts_the_rest() {
     ];
     let base = tmp();
     let dest = base.path().join("dest");
+    // A drive-relative path such as `C:name` lands in the process's working directory, so look there too.
+    let cwd_escape = std::env::current_dir().unwrap().join("escape.txt");
+    let _ = std::fs::remove_file(&cwd_escape);
     let mut f = Forge::new(1024);
     for (n, p) in evil.iter().enumerate() {
         f.file(n as u64 + 1, p, b"payload that must not land outside");
@@ -214,5 +217,6 @@ fn extraction_refuses_unsafe_paths_and_still_extracts_the_rest() {
     assert_eq!(inside.iter().map(|(p, _)| p.as_str()).collect::<Vec<_>>(), ["safe", "safe/good.txt"]);
     // and not in the parent of the temp dir either
     assert!(!base.path().parent().unwrap().join("escape.txt").exists());
+    assert!(!cwd_escape.exists(), "a file escaped into the working directory");
     let _ = HashMap::<u8, u8>::new();
 }
